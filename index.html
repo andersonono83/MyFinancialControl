@@ -132,7 +132,7 @@
                         <th>Despesas</th>
                         <th>Saldo</th>
                     </tr>
-                ></thead>
+                </thead>
                 <tbody id="tabelaResumo">
                     <tr><td colspan="4">Carregando dados...</td></tr>
                 </tbody>
@@ -142,14 +142,12 @@
 
     <script>
         // COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI DENTRO DAS ASPAS:
-        const URL_DO_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbz82QhXECwl8A7ES3wW5pzJ9xZOKPO-Ez76ZEfcn8FoJ7sFTt4jYxNXpL17TTIVfIPVdg/exec";
+        const URL_DO_APPS_SCRIPT = "https://script.google.com/macros/library/d/1sHHqDoRSrp6xyZqfuOxti06nfk8mbqIQPRIQV3s0f20UW4JfeJ-nZ8XH/4";
 
-        // Ao carregar a página, busca os dados para montar a tabela
         window.onload = function() {
             carregarResumo();
         };
 
-        // Envio do formulário
         document.getElementById("formGasto").addEventListener("submit", function(e) {
             e.preventDefault();
 
@@ -168,7 +166,7 @@
                 categoria: document.getElementById("categoria").value,
                 conta: document.getElementById("conta").value,
                 forma: document.getElementById("forma").value,
-                valor: document.getElementById("valor").value,
+                valor: parseFloat(document.getElementById("valor").value),
                 tipo: document.getElementById("tipo").value
             };
 
@@ -182,7 +180,7 @@
                 document.getElementById("formGasto").reset();
                 btn.innerText = "Salvar na Planilha";
                 btn.disabled = false;
-                carregarResumo(); // Atualiza a tabela na hora
+                carregarResumo();
             })
             .catch(error => {
                 console.error("Erro:", error);
@@ -192,36 +190,38 @@
             });
         });
 
-        // Função para buscar dados da planilha e calcular o resumo
         function carregarResumo() {
             fetch(URL_DO_APPS_SCRIPT)
             .then(response => response.json())
             .then(dados => {
-                let resumo = {};
+                // Inicializa as categorias padrão fixas para sempre aparecerem na tabela
+                let resumo = {
+                    "Transporte": { receitas: 0, despesas: 0 },
+                    "Lazer": { receitas: 0, despesas: 0 },
+                    "Supermercado": { receitas: 0, despesas: 0 }
+                };
 
-                // Agrupa valores por categoria
+                // Soma os valores vindos da planilha
                 dados.forEach(item => {
-                    let cat = item.categoria || "Outros";
+                    let cat = item.categoria ? item.categoria.trim() : "Outros";
                     if (!resumo[cat]) {
                         resumo[cat] = { receitas: 0, despesas: 0 };
                     }
-                    if (item.tipo === "Receita") {
-                        resumo[cat].receitas += item.valor;
-                    } else if (item.tipo === "Despesa") {
-                        resumo[cat].despesas += item.valor;
+                    
+                    let val = parseFloat(item.valor) || 0;
+                    let tipo = item.tipo ? item.tipo.trim() : "";
+
+                    if (tipo === "Receita") {
+                        resumo[cat].receitas += val;
+                    } else if (tipo === "Despesa") {
+                        resumo[cat].despesas += val;
                     }
                 });
 
                 let tbody = document.getElementById("tabelaResumo");
                 tbody.innerHTML = "";
 
-                let categorias = Object.keys(resumo);
-                if (categorias.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='4'>Nenhum lançamento encontrado.</td></tr>";
-                    return;
-                }
-
-                categorias.forEach(cat => {
+                Object.keys(resumo).forEach(cat => {
                     let rec = resumo[cat].receitas;
                     let desp = resumo[cat].despesas;
                     let saldo = rec - desp;
