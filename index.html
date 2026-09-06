@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos</title>
+    <title>Controle de Gastos - Finanças</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
         .card {
             background: white;
@@ -26,12 +26,14 @@
         h2 {
             text-align: center;
             color: #333;
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-top: 10px;
+            margin-top: 12px;
             color: #555;
             font-weight: bold;
+            font-size: 14px;
         }
         select, input {
             width: 100%;
@@ -40,6 +42,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 14px;
         }
         button {
             width: 100%;
@@ -62,20 +65,37 @@
     <div class="card">
         <h2>Novo Lançamento</h2>
         <form id="formGasto">
+            
             <label>Tipo:</label>
-            <select id="tipo">
+            <select id="tipo" required>
                 <option value="Despesa">Despesa</option>
                 <option value="Receita">Receita</option>
             </select>
 
+            <label>Empresa / Estabelecimento:</label>
+            <input type="text" id="empresa" placeholder="Ex: Uber, Supermercado Extra" required>
+
             <label>Categoria:</label>
-            <input type="text" id="categoria" placeholder="Ex: Mercado, Aluguel" required>
+            <select id="categoria" required>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Supermercado">Supermercado</option>
+            </select>
+
+            <label>Conta:</label>
+            <select id="conta" required>
+                <option value="Mercado Pago">Mercado Pago</option>
+                <option value="Nubank">Nubank</option>
+            </select>
+
+            <label>Forma de Pagamento:</label>
+            <select id="forma" required>
+                <option value="Crédito">Crédito</option>
+                <option value="PIX">PIX</option>
+            </select>
 
             <label>Valor (R$):</label>
             <input type="number" step="0.01" id="valor" placeholder="0.00" required>
-
-            <label>Descrição:</label>
-            <input type="text" id="descricao" placeholder="Detalhes (opcional)">
 
             <button type="submit" id="btnSalvar">Salvar na Planilha</button>
         </form>
@@ -92,11 +112,22 @@
             btn.innerText = "Salvando...";
             btn.disabled = true;
 
+            // Pega a data atual formatada (DD/MM/AAAA)
+            const hoje = new Date();
+            const dataFormatada = hoje.toLocaleDateString('pt-BR');
+
+            // Pega o mês e ano atual automaticamente para o "Mês Ref" (Ex: "Setembro/2026")
+            const mesRefFormatado = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
             const dados = {
-                tipo: document.getElementById("tipo").value,
+                data: dataFormatada,
+                mesRef: mesRefFormatado.charAt(0).toUpperCase() + mesRefFormatado.slice(1), // Capitaliza o mês
+                empresa: document.getElementById("empresa").value,
                 categoria: document.getElementById("categoria").value,
+                conta: document.getElementById("conta").value,
+                forma: document.getElementById("forma").value,
                 valor: document.getElementById("valor").value,
-                descricao: document.getElementById("descricao").value
+                tipo: document.getElementById("tipo").value
             };
 
             fetch(URL_DO_APPS_SCRIPT, {
