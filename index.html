@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos - Finanças</title>
+    <title>Controle de Gastos e Receitas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,26 +11,28 @@
             margin: 0;
             padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
         }
         .card {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
+            margin-bottom: 20px;
         }
-        h2 {
+        h2, h3 {
             text-align: center;
             color: #333;
-            margin-bottom: 20px;
+            margin-top: 0;
         }
         label {
             display: block;
-            margin-top: 12px;
+            margin-top: 10px;
             color: #555;
             font-weight: bold;
             font-size: 14px;
@@ -58,53 +60,96 @@
         button:hover {
             background-color: #218838;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .positivo { color: green; font-weight: bold; }
+        .negativo { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>Novo Lançamento</h2>
-        <form id="formGasto">
-            
-            <label>Tipo:</label>
-            <select id="tipo" required>
-                <option value="Despesa">Despesa</option>
-                <option value="Receita">Receita</option>
-            </select>
+    <div class="container">
+        <!-- Formulário de Lançamento -->
+        <div class="card">
+            <h2>Novo Lançamento</h2>
+            <form id="formGasto">
+                <label>Tipo:</label>
+                <select id="tipo" required>
+                    <option value="Despesa">Despesa</option>
+                    <option value="Receita">Receita</option>
+                </select>
 
-            <label>Empresa / Estabelecimento:</label>
-            <input type="text" id="empresa" placeholder="Ex: Uber, Supermercado Extra" required>
+                <label>Empresa / Estabelecimento:</label>
+                <input type="text" id="empresa" placeholder="Ex: Posto, Uber, Salário" required>
 
-            <label>Categoria:</label>
-            <select id="categoria" required>
-                <option value="Transporte">Transporte</option>
-                <option value="Lazer">Lazer</option>
-                <option value="Supermercado">Supermercado</option>
-            </select>
+                <label>Categoria:</label>
+                <select id="categoria" required>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Supermercado">Supermercado</option>
+                </select>
 
-            <label>Conta:</label>
-            <select id="conta" required>
-                <option value="Mercado Pago">Mercado Pago</option>
-                <option value="Nubank">Nubank</option>
-            </select>
+                <label>Conta:</label>
+                <select id="conta" required>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="Nubank">Nubank</option>
+                </select>
 
-            <label>Forma de Pagamento:</label>
-            <select id="forma" required>
-                <option value="Crédito">Crédito</option>
-                <option value="PIX">PIX</option>
-            </select>
+                <label>Forma de Pagamento:</label>
+                <select id="forma" required>
+                    <option value="Crédito">Crédito</option>
+                    <option value="PIX">PIX</option>
+                </select>
 
-            <label>Valor (R$):</label>
-            <input type="number" step="0.01" id="valor" placeholder="0.00" required>
+                <label>Valor (R$):</label>
+                <input type="number" step="0.01" id="valor" placeholder="0.00" required>
 
-            <button type="submit" id="btnSalvar">Salvar na Planilha</button>
-        </form>
+                <button type="submit" id="btnSalvar">Salvar na Planilha</button>
+            </form>
+        </div>
+
+        <!-- Tabela de Resumo por Categoria -->
+        <div class="card">
+            <h3>Resumo por Categoria</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoria</th>
+                        <th>Receitas</th>
+                        <th>Despesas</th>
+                        <th>Saldo</th>
+                    </tr>
+                ></thead>
+                <tbody id="tabelaResumo">
+                    <tr><td colspan="4">Carregando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         // COLE A SUA URL DO GOOGLE APPS SCRIPT AQUI DENTRO DAS ASPAS:
         const URL_DO_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbz82QhXECwl8A7ES3wW5pzJ9xZOKPO-Ez76ZEfcn8FoJ7sFTt4jYxNXpL17TTIVfIPVdg/exec";
 
+        // Ao carregar a página, busca os dados para montar a tabela
+        window.onload = function() {
+            carregarResumo();
+        };
+
+        // Envio do formulário
         document.getElementById("formGasto").addEventListener("submit", function(e) {
             e.preventDefault();
 
@@ -112,16 +157,13 @@
             btn.innerText = "Salvando...";
             btn.disabled = true;
 
-            // Pega a data atual formatada (DD/MM/AAAA)
             const hoje = new Date();
             const dataFormatada = hoje.toLocaleDateString('pt-BR');
-
-            // Pega o mês e ano atual automaticamente para o "Mês Ref" (Ex: "Setembro/2026")
             const mesRefFormatado = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
             const dados = {
                 data: dataFormatada,
-                mesRef: mesRefFormatado.charAt(0).toUpperCase() + mesRefFormatado.slice(1), // Capitaliza o mês
+                mesRef: mesRefFormatado.charAt(0).toUpperCase() + mesRefFormatado.slice(1),
                 empresa: document.getElementById("empresa").value,
                 categoria: document.getElementById("categoria").value,
                 conta: document.getElementById("conta").value,
@@ -140,6 +182,7 @@
                 document.getElementById("formGasto").reset();
                 btn.innerText = "Salvar na Planilha";
                 btn.disabled = false;
+                carregarResumo(); // Atualiza a tabela na hora
             })
             .catch(error => {
                 console.error("Erro:", error);
@@ -148,6 +191,57 @@
                 btn.disabled = false;
             });
         });
+
+        // Função para buscar dados da planilha e calcular o resumo
+        function carregarResumo() {
+            fetch(URL_DO_APPS_SCRIPT)
+            .then(response => response.json())
+            .then(dados => {
+                let resumo = {};
+
+                // Agrupa valores por categoria
+                dados.forEach(item => {
+                    let cat = item.categoria || "Outros";
+                    if (!resumo[cat]) {
+                        resumo[cat] = { receitas: 0, despesas: 0 };
+                    }
+                    if (item.tipo === "Receita") {
+                        resumo[cat].receitas += item.valor;
+                    } else if (item.tipo === "Despesa") {
+                        resumo[cat].despesas += item.valor;
+                    }
+                });
+
+                let tbody = document.getElementById("tabelaResumo");
+                tbody.innerHTML = "";
+
+                let categorias = Object.keys(resumo);
+                if (categorias.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='4'>Nenhum lançamento encontrado.</td></tr>";
+                    return;
+                }
+
+                categorias.forEach(cat => {
+                    let rec = resumo[cat].receitas;
+                    let desp = resumo[cat].despesas;
+                    let saldo = rec - desp;
+
+                    let classeSaldo = saldo >= 0 ? "positivo" : "negativo";
+
+                    let linha = `<tr>
+                        <td><b>${cat}</b></td>
+                        <td style="color: green;">R$ ${rec.toFixed(2)}</td>
+                        <td style="color: red;">R$ ${desp.toFixed(2)}</td>
+                        <td class="${classeSaldo}">R$ ${saldo.toFixed(2)}</td>
+                    </tr>`;
+                    tbody.innerHTML += linha;
+                });
+            })
+            .catch(error => {
+                console.error("Erro ao carregar resumo:", error);
+                document.getElementById("tabelaResumo").innerHTML = "<tr><td colspan='4'>Erro ao carregar dados.</td></tr>";
+            });
+        }
     </script>
 </body>
 </html>
